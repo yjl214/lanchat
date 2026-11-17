@@ -41,6 +41,4 @@ Codes by Deepseek
 
 [![Contributors](https://contrib.rocks/image?repo=yjl214/lanchat)](https://github.com/yjl214/lanchat/graphs/contributors)
 
-Made with [contrib.rocks](https://contrib.rocks).
 
-[^1]:可以将自己的CS放至软件同目录下，将使用此版本CS
