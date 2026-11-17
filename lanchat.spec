@@ -3,7 +3,7 @@
 # LANChat 打包脚本（PyInstaller 6.x）
 #
 # 构建：  python -m PyInstaller lanchat.spec --noconfirm
-# 产物：  dist\lanchat.exe（单文件，内置 CS1_6 整个目录）
+# 产物：  dist\lanchat.exe（单文件，首次运行从 7z 直链下载 CS1.6）
 #
 import os
 import sys
@@ -40,8 +40,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'ssl', '_ssl', 'hashlib', '_hashlib', '_md5', '_sha1', '_sha2', '_sha3', '_blake2',
-        'email', 'http', 'urllib', 'xml', 'xmlrpc', 'html',
+        'xml', 'xmlrpc',
         'unittest', 'doctest', 'pydoc', 'pdb', 'difflib',
         'decimal', '_decimal',
         'asyncio', 'concurrent', 'multiprocessing', 'sqlite3', '_sqlite3',
