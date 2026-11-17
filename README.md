@@ -1,6 +1,6 @@
 # lanchat
 
-by @yjl214, @Xuandows9
+by @github/yjl214, @github/Xuandows9
 
 Codes by Deepseek
 
