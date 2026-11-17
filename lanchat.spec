@@ -24,7 +24,7 @@ if not _tcl_dir:
     if not os.path.isdir(_tcl_dir):
         _tcl_dir = None
 
-_datas = [('CS1_6', 'CS1_6')]
+_datas = []
 if _tcl_dir:
     _datas.append((_tcl_dir, '_tcl_data'))   # 目标路径必须是 _tcl_data
 else:
