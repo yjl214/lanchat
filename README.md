@@ -39,9 +39,7 @@ Codes by Deepseek
 
 ## 贡献者名单
 
-<a href="https://github.com/yjl214/lanchat/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=yjl214/lanchat" />
-</a>
+[![Contributors](https://contrib.rocks/image?repo=yjl214/lanchat)](https://github.com/yjl214/lanchat/graphs/contributors)
 
 Made with [contrib.rocks](https://contrib.rocks).
 
