@@ -1,0 +1,206 @@
+"0" "#Cstrike_UserSetting"
+{
+	"0" "#Cstrike_ChangeName" "messagemode name"
+	"1" "#Cstrike_Sensitivity" "messagemode sensitivity"
+	"2" "#Cstrike_Weapon_Alignment"
+	{
+		"1" "#Cstrike_Left_Handed" "cl_righthand 0"
+		"2" "#Cstrike_Right_Handed" "cl_righthand 1"
+	}
+	"3" "#Cstrike_AutoWeaponSwitch"
+	{
+		"1" "#Cstrike_Turnon" "_cl_autowepswitch 1"
+		"2" "#Cstrike_Turnoff" "_cl_autowepswitch 0"
+	}
+	"4" "#GameUI_CrosshairDescription"
+	{
+		"1" "#GameUI_Small" "cl_crosshair_size small"
+		"2" "#GameUI_Large" "cl_crosshair_size Large"
+		"3" "#GameUI_Auto" "cl_crosshair_size auto"
+		"4" "#GameUI_Medium" "cl_crosshair_size Medium"
+	}
+	"5" "#Cstrike_Dynamiccrosshair"
+	{
+		"1" "#Cstrike_Turnon" "cl_dynamiccrosshair 1"
+		"2" "#Cstrike_Turnoff" "cl_dynamiccrosshair 0"
+	}
+	"6" "#Cstrike_Fastswitch"
+	{
+		"1" "#Cstrike_Turnon" "hud_fastswitch 1"
+		"2" "#Cstrike_Turnoff" "hud_fastswitch 0"
+	}
+}
+"1" "#Cstrike_ServerSetting"
+{
+	"0" "#Cstrike_ChangeRcon" "messagemode rcon_password"
+	"1" "#Cstrike_Restartround" "sv_restartround 1;rcon sv_restartround 1"
+	"2" "#Cstrike_Lo3" "exec cfg/r3.cfg"
+	"3" "#Cstrike_ServerReLoad" "restart;rcon restart"
+	"4" "#Cstrike_GameType"
+	{
+		"0" "#Cstrike_MatchType" "exec cfg/match.cfg"
+		"1" "#Cstrike_PublicType" "exec cfg/public.cfg"
+	}
+	"5" "#Cstrike_StartMoney"
+	{
+		"0" "$800" "mp_startmoney 800;rcon mp_startmoney 800"
+		"1" "$1,6000" "mp_startmoney 16000;rcon mp_startmoney 16000"
+	}
+	"6" "#Valve_Friendly_Fire"
+	{
+		"0" "#Cstrike_Turnon" "mp_friendlyfire 1;rcon mp_friendlyfire 1"
+		"1" "#Cstrike_Turnoff" "mp_friendlyfire 0;rcon mp_friendlyfire 0"
+	}
+	"7" "#Cstrike_Gametimesetting"
+	{
+		"0" "#Cstrike_Timelimit"
+		{
+			"0" "20" "mp_timelimit 20;rcon mp_timelimit 20"
+			"1" "40" "mp_timelimit 40;rcon mp_timelimit 40"
+			"2" "60" "mp_timelimit 60;rcon mp_timelimit 60"
+			"3" "#Cstrike_Nolimit" "mp_timelimit 0;rcon mp_timelimit 0"
+		}
+
+		"1" "#Cstrike_RoundTime"
+		{
+			"0" "1.5" "mp_roundtime 1.5;rcon mp_roundtime 1.5"
+			"1" "1.75" "mp_roundtime 1.75;rcon mp_roundtime 1.75"
+			"2" "2.5" "mp_roundtime 2.5;rcon mp_roundtime 2.5"
+			"3" "3.0" "mp_roundtime 3;rcon mp_roundtime 3"
+			"4" "4.0" "mp_roundtime 4;rcon mp_roundtime 4"
+			"5" "5.0" "mp_roundtime 5;rcon mp_roundtime 5"
+		}
+
+		"2" "#Cstrike_FreezeTime"
+		{
+			"0" "#Cstrike_Nolimit" "mp_freezetime 0;rcon mp_freezetime 0"
+			"1" "3" "mp_freezetime 3;rcon mp_freezetime 3"
+			"2" "5" "mp_freezetime 5;rcon mp_freezetime 5"
+			"3" "7" "mp_freezetime 7;rcon mp_freezetime 7"
+		}
+
+		"5" "#Cstrike_BuyTime"
+		{
+			"0" "0.25" "mp_buytime 0.25;rcon mp_buytime 0.25"
+			"1" "1.0" "mp_buytime 1;rcon mp_buytime 1"
+			"2" "2.0" "mp_buytime 2;rcon mp_buytime 2"
+			"3" "3.0" "mp_buytime 3;rcon mp_buytime 3"
+		}
+
+		"6" "#Cstrike_Explosiontime"
+		{
+			"0" "35" "mp_c4timer 35;rcon mp_c4timer 35"
+			"1" "45" "mp_c4timer 45;rcon mp_c4timer 45"
+		}
+	}
+	"8" "#Cstrike_Autoteambalance"
+	{
+		"0" "#Cstrike_Turnon" "mp_autoteambalance 1;mp_limitteams 1;rcon mp_autoteambalance 1;rcon mp_limitteams 1"
+		"1" "#Cstrike_Turnoff" "mp_autoteambalance 0;mp_limitteams 50;rcon mp_autoteambalance 0;rcon mp_limitteams 50"
+	}
+	"9" "#Cstrike_Death_Camera_Type"
+	{
+		"0" "#Cstrike_Spectate_Anyone" "mp_forcecamera 0;rcon mp_forcecamera 0"
+		"1" "#Cstrike_Spectate_Team_Only" "mp_forcecamera 1;rcon mp_forcecamera 1"
+		"2" "#Cstrike_Only_First_Person" "mp_forcecamera 2;rcon mp_forcecamera 2"
+	}
+}
+
+"2" "#Cstrike_Changemap"
+{
+	"0" "#Cstrike_Macthmap"
+	{
+		"0" "de_dust2" "changelevel de_dust2;rcon changelevel de_dust2"
+		"1" "de_inferno" "changelevel de_inferno;rcon changelevel de_inferno"
+		"2" "de_nuke" "changelevel de_nuke;rcon changelevel de_nuke"
+		"3" "de_train" "changelevel de_train;rcon changelevel de_train"
+		"4" "de_tuscan" "changelevel de_tuscan;rcon changelevel de_tuscan"
+		"5" "de_forge" "changelevel de_forge;rcon changelevel de_forge"
+		"6" "de_mirage" "changelevel de_mirage;rcon changelevel de_mirage"
+	}
+	"1" "#Cstrike_Publicmap1"
+	{
+		"0" "3d_aim_dust2" "changelevel 3d_aim_dust2;rcon changelevel 3d_aim_dust2"
+		"1" "3d_aim_nuke" "changelevel 3d_aim_nuke;rcon changelevel 3d_aim_nuke"
+		"2" "3d_aim_train_a" "changelevel 3d_aim_train_a;rcon changelevel 3d_aim_train_a"
+		"3" "3d_aim_train_b" "changelevel 3d_aim_train_b;rcon changelevel 3d_aim_train_b"
+		"4" "aim_map" "changelevel aim_map;rcon changelevel aim_map"
+		"5" "aim_qpad_2007" "changelevel aim_qpad_2007;rcon changelevel aim_qpad_2007"
+		"6" "aim_sk_ak_m4" "changelevel aim_sk_ak_m4;rcon changelevel aim_sk_ak_m4"
+	}
+	"2" "#Cstrike_Publicmap2"
+	{
+		"0" "aim_sk_awp" "changelevel aim_sk_awp;rcon changelevel aim_sk_awp"
+		"1" "aim_sk_usp_deagle" "changelevel aim_sk_usp_deagle;rcon changelevel aim_sk_usp_deagle"
+		"2" "aim_usp" "changelevel aim_usp;rcon changelevel aim_usp"
+		"3" "ak47_m4a1_dust" "changelevel ak47_m4a1_dust;rcon changelevel ak47_m4a1_dust"
+		"4" "awp_map" "changelevel awp_map;rcon changelevel awp_map"
+		"5" "cs_bloodstrike" "changelevel cs_bloodstrike;rcon changelevel cs_bloodstrike"
+		"6" "fy_iceworld" "changelevel fy_iceworld;rcon changelevel fy_iceworld"
+	}
+	"3" "#Cstrike_Publicmap3"
+	{
+		"0" "de_dust2_spam_spots" "changelevel de_dust2_spam_spots;rcon changelevel de_dust2_spam_spots"
+		"1" "de_inferno_spam_spots" "changelevel de_inferno_spam_spots;rcon changelevel de_inferno_spam_spots"
+		"2" "de_nuke_spam_spots" "changelevel de_nuke_spam_spots;rcon changelevel de_nuke_spam_spots"
+		"3" "de_train_spam_spots" "changelevel de_train_spam_spots;rcon changelevel de_train_spam_spots"
+	}
+	"4" "#Cstrike_EnterMapName" "messagemode changelevel"
+}
+
+"3" "#Cstrike_Habit"
+{
+	"0" "#Cstrike_Buy_Menu_Type"
+	{
+		"0" "#Cstrike_Old_Style_Menus" "_vgui_menus 0"
+		"1" "#Cstrike_VGUI_Menus" "_vgui_menus 1"
+	}
+	"1" "#Cstrike_RadarType"
+	{
+		"0" "#Cstrike_Transparent"	"cl_radartype 0"
+		"1" "#Cstrike_Solid"	"cl_radartype 1"
+	}
+	"2" "#Valve_Center_Player_Names"
+	{
+		"0" "#Cstrike_Turnon" "hud_centerid 1"
+		"1" "#Cstrike_Turnoff" "hud_centerid 0"
+	}
+	"3" "#Cstrike_Adjust_Crosshair" "adjust_crosshair"
+	"4" "#Cstrike_ShowTheFps"
+	{
+		"0" "#Cstrike_Showfps" "cl_showfps 1"
+		"1" "#Cstrike_Nodisplay" "cl_showfps 0"
+	}
+	"5" "#Cstrike_Netgraphmode"
+	{
+		"0" "#Cstrike_Nodisplay" "net_graph 0"
+		"1" "#Cstrike_Simpledisplay" "net_graph 1"
+		"2" "#Cstrike_Alldisplay" "net_graph 2"
+		"3" "#Cstrike_Compactdisplay" "net_graph 3"
+	}
+	"6" "#Cstrike_Netgraphpos"
+	{
+		"0" "#Cstrike_Lowerleft" "net_graphpos 3"
+		"1" "#Cstrike_Bottomcenter" "net_graphpos 2"
+		"2" "#Cstrike_Lowerright" "net_graphpos 1"
+	}
+}
+"4" "#Cstrike_Parameter"
+{
+	"0" "rate" "messagemode rate"
+	"1" "cl_updaterate" "messagemode cl_updaterate"
+	"2" "cl_cmdrate" "messagemode cl_cmdrate"
+	"3" "ex_interp" "messagemode ex_interp"
+	"4" "fps_max" "messagemode fps_max"
+	"5" "#Cstrike_AutoOPT" "rate 25000;cl_updaterate 101;cl_cmdrate 101;ex_interp 0.01;fps_max 101"
+}
+
+"5" "#Cstrike_Record"
+{
+	"0" "#Cstrike_Screenshots" "snapshot"
+	"1" "#Cstrike_Startrecording" "messagemode record"
+	"2" "#Cstrike_Stoprecording" "stop"
+	"3" "#Cstrike_viewdemo" "messagemode viewdemo"
+}
+
+"6" "#Cstrike_5EPlayExit" "say 5Eplay.com E-Sports Website."

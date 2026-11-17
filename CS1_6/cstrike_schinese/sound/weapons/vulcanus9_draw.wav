@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<TITLE>404 Not Found</TITLE>
+<link href="/web.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div class="wrapper">
+<div class="mainbody" style="box-shadow: 0px 0px 0px #ffffff;border: none;">
+ 
+<div class="msgbox">
+<div class="msgbox-header">
+<div class="close" onclick="window.history.back();">&times;</div>
+<div class="IconDiv icon-fail"></div>Not Found
+</div>
+<div class="msgbox-body">
+Requested URL was not found on this server.
+</div>
+<div class="msgbox-footer">
+<button onclick="location.href='/';">OK</button>
+</div>
+</div>
+
+</div>
+</body>
+</html>
