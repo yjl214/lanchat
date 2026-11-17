@@ -1,6 +1,6 @@
 # lanchat
 
-by BaiYangW, Xuandows9
+by @yjl214, @Xuandows9
 
 Codes by Deepseek
 
