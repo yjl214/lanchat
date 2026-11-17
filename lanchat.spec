@@ -5,12 +5,36 @@
 # 构建：  python -m PyInstaller lanchat.spec --noconfirm
 # 产物：  dist\lanchat.exe（单文件，内置 CS1_6 整个目录）
 #
+import os
+import sys
+import tkinter
+
+# ---------- 手动添加 Tcl 数据目录 ----------
+_tcl_dir = None
+# 优先从 tkinter 模块位置查找
+try:
+    _tcl_dir = os.path.join(os.path.dirname(tkinter.__file__), 'tcl')
+    if not os.path.isdir(_tcl_dir):
+        _tcl_dir = None
+except Exception:
+    pass
+# 备选：从 Python 根目录查找
+if not _tcl_dir:
+    _tcl_dir = os.path.join(sys.base_prefix, 'tcl')
+    if not os.path.isdir(_tcl_dir):
+        _tcl_dir = None
+
+_datas = [('CS1_6', 'CS1_6')]
+if _tcl_dir:
+    _datas.append((_tcl_dir, '_tcl_data'))   # 目标路径必须是 _tcl_data
+else:
+    print("WARNING: Could not locate Tcl data directory. Tkinter may fail at runtime.")
 
 a = Analysis(
     ['lanchat.py'],
-    pathex=[SPECPATH],                # ← 改为 SPECPATH，更健壮
+    pathex=[SPECPATH],
     binaries=[],
-    datas=[('CS1_6', 'CS1_6')],
+    datas=_datas,                          # 使用动态构建的列表
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -29,8 +53,6 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-# ★★★ 重要：删除了之前手动过滤 Tcl/Tk 数据的代码 ★★★
-
 exe = EXE(
     pyz,
     a.scripts,
@@ -44,7 +66,7 @@ exe = EXE(
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,             # 正式发布时保持 False
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
