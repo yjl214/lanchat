@@ -4,20 +4,23 @@
 LANChat v5 — 局域网聊天工具（纯 P2P，无独立服务端）
 
 v5 新增：
-- 左侧工具箱：一键启动内置 CS1.6（随 exe 嵌入，首次运行自动解压到程序同目录）
+- 左侧工具箱：一键启动内置 CS1.6（首次运行从 7z 直链下载并解压到程序同目录，下载途中可取消）
 - 左侧工具箱：一键关闭极域电子教室（taskkill /F /IM 进程名）
 """
 import json
+import locale
 import os
 import queue
+import shutil
 import socket
 import subprocess
 import sys
 import threading
 import time
+import urllib.request
 import uuid
 import tkinter as tk
-from tkinter import messagebox, scrolledtext
+from tkinter import messagebox, scrolledtext, ttk
 
 # ============================== 全局配置 ==============================
 APP_MAGIC = "LANCHAT-V5"
@@ -29,7 +32,11 @@ MAX_HISTORY = 1000
 FONT = "Microsoft YaHei UI"
 _CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
-# 内置 CS1.6：打包时随 exe 一起嵌入，首次运行自动解压到程序同目录
+# 内置 CS1.6：首次运行从下面的 7z 直链下载并解压到程序同目录
+# 把链接换成你自己的 7z 直链（http/https）；也可用环境变量 LANCHAT_CS_URL 覆盖
+CS_ARCHIVE_URL_PLACEHOLDER = "https://example.com/CS1_6.7z"
+CS_ARCHIVE_URL = os.environ.get("LANCHAT_CS_URL") or CS_ARCHIVE_URL_PLACEHOLDER
+CS_ARCHIVE_NAME = "CS1_6.7z"
 CS_DIR_NAME = "CS1_6"
 CS_EXE_NAMES = ("cs1.6.exe", "hl.exe")
 CS_STAMP_NAME = ".extracted"
@@ -52,14 +59,17 @@ DATA_DIR = os.environ.get("LANCHAT_DATA_DIR") or os.path.join(BASE_DIR, "data")
 HISTORY_DIR = os.path.join(DATA_DIR, "history")
 os.makedirs(HISTORY_DIR, exist_ok=True)
 
-# 嵌入资源根目录：onefile 打包时为 PyInstaller 的临时解包目录，源码运行时为脚本目录
-BUNDLE_DIR = getattr(sys, "_MEIPASS", BASE_DIR)
 CS_DIR = os.path.join(BASE_DIR, CS_DIR_NAME)
-CS_BUNDLE_DIR = os.path.join(BUNDLE_DIR, CS_DIR_NAME)
+CS_ARCHIVE_PATH = os.path.join(BASE_DIR, CS_ARCHIVE_NAME)
+CS_STAGE_DIR = os.path.join(BASE_DIR, CS_DIR_NAME + ".part")
+
+
+class DownloadCancelled(Exception):
+    """用户取消了 CS1.6 的下载或解压"""
 
 
 def cs_exe_path():
-    """返回内置 CS1.6 启动程序的完整路径；未解压或缺失时返回 None"""
+    """返回内置 CS1.6 启动程序的完整路径；未下载或缺失时返回 None"""
     for name in CS_EXE_NAMES:
         p = os.path.join(CS_DIR, name)
         if os.path.isfile(p):
@@ -72,68 +82,134 @@ def cs_ready():
         cs_exe_path() is not None
 
 
-def _copy_file(src, dst):
-    """复制文件并保留时间戳/只读属性；Windows 走系统 API，失败或其它平台走分块复制"""
-    if os.path.exists(dst):
-        try:
-            os.chmod(dst, 0o666)          # 清掉只读，允许覆盖上次残留的文件
-        except OSError:
-            pass
-    done = False
-    if sys.platform == "win32":
-        try:
-            import ctypes
-            done = bool(ctypes.windll.kernel32.CopyFileW(src, dst, False))
-        except Exception:
-            done = False
-    if not done:
-        with open(src, "rb") as fs, open(dst, "wb") as fd:
-            while True:
-                chunk = fs.read(1 << 20)
-                if not chunk:
-                    break
-                fd.write(chunk)
+def _remove_path(path):
+    """删除文件或目录，忽略不存在和权限错误"""
+    if os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=True)
+        return
     try:
-        st = os.stat(src)
-        os.chmod(dst, st.st_mode)
-        os.utime(dst, (st.st_atime, st.st_mtime))
+        os.chmod(path, 0o666)          # 清掉只读，保证能删掉
+    except OSError:
+        pass
+    try:
+        os.remove(path)
     except OSError:
         pass
 
 
-def extract_cs(progress=None):
-    """把嵌入的 CS1_6 解压到程序同目录，返回启动程序路径；失败抛 OSError"""
-    if os.path.abspath(CS_BUNDLE_DIR) == os.path.abspath(CS_DIR):
-        return cs_exe_path()
-    if cs_ready():
-        return cs_exe_path()
-    if not os.path.isdir(CS_BUNDLE_DIR):
-        return None
+def cleanup_cs_residue():
+    """删除下载的 7z 和解压中转目录等残留"""
+    _remove_path(CS_ARCHIVE_PATH)
+    _remove_path(CS_STAGE_DIR)
 
-    stamp = os.path.join(CS_DIR, CS_STAMP_NAME)
+
+def download_cs_archive(url, dest, progress=None, cancel=None):
+    """下载 7z 到 dest；progress(已下载字节数, 总字节数)，取消时抛 DownloadCancelled"""
+    req = urllib.request.Request(url, headers={"User-Agent": APP_MAGIC})
+    done = 0
+    with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as f:
+        total = int(resp.headers.get("Content-Length") or 0)
+        # read1 有多少读多少，取消后能立刻响应，不必等满一个缓冲区
+        read = getattr(resp, "read1", resp.read)
+        while True:
+            if cancel is not None and cancel.is_set():
+                raise DownloadCancelled()
+            chunk = read(1 << 16)
+            if not chunk:
+                break
+            f.write(chunk)
+            done += len(chunk)
+            if progress is not None:
+                progress(done, total)
+    if total and done < total:
+        raise OSError(f"下载不完整：只收到 {done}/{total} 字节")
+    return done
+
+
+def _extract_command(archive, stage):
+    """优先用 7z，没有则退回 Windows 自带的 tar（bsdtar 支持 7z 格式）"""
+    for name in ("7z.exe", "7za.exe", "7zr.exe", "7zz.exe"):
+        exe = shutil.which(name)
+        if exe:
+            return [exe, "x", archive, "-o" + stage, "-y", "-bso0", "-bsp0"]
+    tar = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"),
+                       "System32", "tar.exe")
+    if not os.path.isfile(tar):
+        tar = shutil.which("tar")
+    if tar:
+        return [tar, "-xf", archive, "-C", stage]
+    return None
+
+
+def _run_extractor(cmd, cancel=None):
+    """执行解压命令；取消时结束子进程并抛 DownloadCancelled"""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            creationflags=_CREATE_NO_WINDOW)
+    while proc.poll() is None:
+        if cancel is not None and cancel.is_set():
+            proc.kill()
+            proc.communicate()
+            raise DownloadCancelled()
+        time.sleep(0.1)
+    _out, err = proc.communicate()
+    if proc.returncode != 0:
+        msg = err.decode(locale.getpreferredencoding(False), "replace").strip()
+        raise OSError("解压失败" + (f"：{msg[:300]}" if msg else "（解压工具返回错误）"))
+
+
+def _merge_tree(src, dst):
+    """把 src 下的内容移到 dst（同一磁盘），返回文件数"""
+    count = 0
+    os.makedirs(dst, exist_ok=True)
+    for name in os.listdir(src):
+        s = os.path.join(src, name)
+        d = os.path.join(dst, name)
+        if os.path.isdir(s):
+            count += _merge_tree(s, d)
+        else:
+            if os.path.exists(d):
+                try:
+                    os.chmod(d, 0o666)
+                except OSError:
+                    pass
+            os.replace(s, d)
+            count += 1
+    return count
+
+
+def extract_cs(archive, cancel=None):
+    """把下载好的 7z 解压到 CS_DIR，返回启动程序路径；取消或失败时清掉残留并抛异常"""
+    cmd = _extract_command(archive, CS_STAGE_DIR)
+    if cmd is None:
+        raise OSError("未找到可用的解压工具（需要 7z，或 Windows 自带的 tar）")
+
+    _remove_path(CS_STAGE_DIR)
+    os.makedirs(CS_STAGE_DIR, exist_ok=True)
+    created_dir = not os.path.isdir(CS_DIR)
     try:
-        os.remove(stamp)
-    except OSError:
-        pass
-
-    items = []
-    for dirpath, _dirnames, filenames in os.walk(CS_BUNDLE_DIR):
-        for name in filenames:
-            src = os.path.join(dirpath, name)
-            items.append((src, os.path.join(CS_DIR, os.path.relpath(src, CS_BUNDLE_DIR))))
-
-    os.makedirs(CS_DIR, exist_ok=True)
-    for i, (src, dst) in enumerate(items, 1):
-        parent = os.path.dirname(dst)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        _copy_file(src, dst)
-        if progress is not None and (i % 200 == 0 or i == len(items)):
-            progress(i, len(items))
-
-    # 全部复制成功后才写标记，中断时下次启动会重新解压
-    with open(stamp, "w", encoding="utf-8") as f:
-        f.write(f"{APP_MAGIC}\n{len(items)}\n")
+        _run_extractor(cmd, cancel)
+        root_dir = CS_STAGE_DIR
+        # 压缩包里可能套了一层 CS1_6 目录，也可能直接是 cstrike/valve 等
+        for name in os.listdir(root_dir):
+            candidate = os.path.join(root_dir, name)
+            if os.path.isdir(candidate) and (
+                    name.lower() == CS_DIR_NAME.lower()
+                    or os.path.isdir(os.path.join(candidate, "cstrike"))):
+                root_dir = candidate
+                break
+        count = _merge_tree(root_dir, CS_DIR)
+        if cs_exe_path() is None:
+            raise OSError("压缩包里没有找到 CS 启动程序（" +
+                          " / ".join(CS_EXE_NAMES) + "）")
+        # 全部解压成功后才写标记，之后启动不再重复下载
+        with open(os.path.join(CS_DIR, CS_STAMP_NAME), "w", encoding="utf-8") as f:
+            f.write(f"{APP_MAGIC}\n{count}\n")
+    except BaseException:
+        cleanup_cs_residue()
+        if created_dir:
+            _remove_path(CS_DIR)
+        raise
+    _remove_path(CS_STAGE_DIR)
     return cs_exe_path()
 
 
@@ -706,7 +782,7 @@ class ChatApp:
         p = cs_exe_path()
         if p:
             return "内置 CS1.6：" + os.path.basename(p)
-        return "内置 CS1.6 未解压（重启程序会自动解压）"
+        return "内置 CS1.6 未下载（重启程序会自动下载）"
 
     def _launch_cs(self):
         if sys.platform != "win32":
@@ -715,7 +791,7 @@ class ChatApp:
         path = cs_exe_path()
         if not path:
             messagebox.showerror("启动 CS 失败",
-                                 "未找到内置 CS1.6 文件，请重新运行程序以解压。",
+                                 "未找到内置 CS1.6 文件，请重新运行程序以下载。",
                                  parent=self.root)
             return
         try:
@@ -1317,47 +1393,160 @@ def ask_nickname_in_root(root):
 
 
 def prepare_bundled_cs(root):
-    """启动时把嵌入的 CS1.6 解压到程序同目录；已解压则直接复用"""
-    if os.path.abspath(CS_BUNDLE_DIR) == os.path.abspath(CS_DIR) or cs_ready():
-        return cs_exe_path()
-
-    label = None
-    try:
-        for w in root.winfo_children():
-            w.destroy()
-        root.title("局域网聊天工具")
-        root.geometry("440x150")
-        root.resizable(False, False)
-        root.configure(bg="#f7f7f7")
-        label = tk.Label(root, text="首次运行，正在解压内置 CS1.6…",
-                         font=(FONT, 12), bg="#f7f7f7", fg="#222")
-        label.pack(expand=True)
-        root.deiconify()
-        root.lift()
-        root.update()
-    except tk.TclError:
-        label = None
-
-    def on_progress(done, total):
-        if label is None:
-            return
-        try:
-            label.configure(text=f"正在解压内置 CS1.6：{done}/{total}")
-            root.update()
-        except tk.TclError:
-            pass
-
-    try:
-        return extract_cs(on_progress)
-    except OSError as e:
+    """启动时确保内置 CS1.6 就绪：首次运行下载 7z 并解压，下载途中可取消"""
+    path = cs_exe_path()
+    if cs_ready() or path:
+        return path
+    if CS_ARCHIVE_URL == CS_ARCHIVE_URL_PLACEHOLDER:
         try:
             messagebox.showerror(
-                "解压 CS1.6 失败",
-                f"{e}\n\n请把程序放到有写入权限的目录后重新运行。",
+                "未配置 CS1.6 下载链接",
+                "请把 lanchat.py 顶部的 CS_ARCHIVE_URL 改成你的 7z 直链，"
+                "或设置环境变量 LANCHAT_CS_URL 后重新运行。",
                 parent=root)
         except tk.TclError:
             pass
         return None
+
+    cancel = threading.Event()
+    events = queue.Queue()
+    state = {"path": None}
+    label = detail = bar = cancel_btn = None
+
+    def on_cancel():
+        if cancel.is_set():
+            return
+        cancel.set()
+        if cancel_btn is not None:
+            try:
+                cancel_btn.configure(state="disabled", text="正在取消…")
+            except tk.TclError:
+                pass
+        if detail is not None:
+            try:
+                detail.configure(text="正在取消并清理残留文件…")
+            except tk.TclError:
+                pass
+
+    last_update = [0.0]
+
+    def on_progress(done, total):
+        now = time.monotonic()
+        if now - last_update[0] < 0.1 and (not total or done < total):
+            return
+        last_update[0] = now
+        events.put(("progress", done, total))
+
+    def worker():
+        try:
+            download_cs_archive(CS_ARCHIVE_URL, CS_ARCHIVE_PATH, on_progress, cancel)
+            events.put(("status", "下载完成，正在解压内置 CS1.6…"))
+            path = extract_cs(CS_ARCHIVE_PATH, cancel)
+            _remove_path(CS_ARCHIVE_PATH)
+            events.put(("done", path))
+        except DownloadCancelled:
+            cleanup_cs_residue()
+            events.put(("cancelled", None))
+        except Exception as e:
+            cleanup_cs_residue()
+            events.put(("error", str(e)))
+
+    done_var = tk.BooleanVar(master=root, value=False)
+
+    def finish(kind, payload):
+        if kind == "done":
+            state["path"] = payload
+        elif kind == "error":
+            try:
+                messagebox.showerror(
+                    "下载 CS1.6 失败",
+                    f"{payload}\n\n请检查网络、下载链接和程序目录的写入权限后重新运行。",
+                    parent=root)
+            except tk.TclError:
+                pass
+        try:
+            for w in root.winfo_children():
+                w.destroy()
+        except tk.TclError:
+            pass
+        done_var.set(True)
+
+    def poll():
+        try:
+            while True:
+                ev = events.get_nowait()
+                kind = ev[0]
+                if kind == "progress":
+                    done, total = ev[1], ev[2]
+                    if label is not None and bar is not None and detail is not None:
+                        mb = done / (1 << 20)
+                        if total:
+                            percent = min(100.0, done * 100.0 / total)
+                            label.configure(text=f"正在下载内置 CS1.6：{percent:.0f}%")
+                            detail.configure(
+                                text=f"{mb:.1f} MB / {total / (1 << 20):.1f} MB")
+                            bar.stop()
+                            bar.configure(mode="determinate", maximum=100, value=percent)
+                        else:
+                            label.configure(text="正在下载内置 CS1.6…")
+                            detail.configure(text=f"已下载 {mb:.1f} MB")
+                            if str(bar.cget("mode")) != "indeterminate":
+                                bar.configure(mode="indeterminate")
+                                bar.start(12)
+                elif kind == "status":
+                    if label is not None and bar is not None:
+                        label.configure(text=ev[1])
+                        if str(bar.cget("mode")) != "indeterminate":
+                            bar.configure(mode="indeterminate")
+                            bar.start(12)
+                else:
+                    if bar is not None:
+                        bar.stop()
+                    finish(kind, ev[1])
+                    return
+        except queue.Empty:
+            pass
+        except tk.TclError:
+            return
+        if not done_var.get():
+            try:
+                root.after(100, poll)
+            except tk.TclError:
+                pass
+
+    try:
+        for w in root.winfo_children():
+            w.destroy()
+        root.title("局域网聊天工具")
+        root.geometry("480x240")
+        root.resizable(False, False)
+        root.configure(bg="#f7f7f7")
+        label = tk.Label(root, text="首次运行，正在下载内置 CS1.6…",
+                         font=(FONT, 12), bg="#f7f7f7", fg="#222")
+        label.pack(pady=(30, 6))
+        detail = tk.Label(root, text="正在连接下载服务器…", font=(FONT, 9),
+                          bg="#f7f7f7", fg="#666")
+        detail.pack()
+        bar = ttk.Progressbar(root, length=400, mode="determinate", maximum=100)
+        bar.pack(pady=12)
+        cancel_btn = tk.Button(root, text="取消", width=10, font=(FONT, 10),
+                               bg="#e5e5e5", fg="#333", activebackground="#d5d5d5",
+                               relief="flat", cursor="hand2", command=on_cancel)
+        cancel_btn.pack()
+        root.protocol("WM_DELETE_WINDOW", on_cancel)
+        root.deiconify()
+        root.lift()
+        root.update()
+    except tk.TclError:
+        label = detail = bar = cancel_btn = None
+
+    threading.Thread(target=worker, daemon=True).start()
+    root.after(100, poll)
+    try:
+        root.wait_variable(done_var)
+    except tk.TclError:
+        cancel.set()
+    return state["path"]
 
 
 def main():
@@ -1396,7 +1585,7 @@ def main():
 
         app = ChatApp(root, nick)
         if cs_path is None:
-            app._show_notice("⚠ 内置 CS1.6 未解压，无法启动 CS")
+            app._show_notice("⚠ 内置 CS1.6 未就绪，无法启动 CS（重启程序会重新下载）")
         root.deiconify()
         root.lift()
         root.mainloop()

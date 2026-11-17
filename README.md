@@ -11,7 +11,7 @@ Codes by Deepseek
     - 使用 ``taskkill /F /IM xxx`` 结束极域进程
 
 3. CS1.6支持
-    - 软件编译成果内置CS1.6，首次启动自动解压 [^1]
+    - 首次启动自动从 7z 直链下载并解压 CS1.6，下载过程中可取消 [^1]
 
 更多功能敬请期待！
 
@@ -20,8 +20,11 @@ Codes by Deepseek
 ### 使用编译成果
 
 - 直接进入release自取.exe运行即可
-    1. 初次运行需要解压CS，时间可能稍久
+    1. 初次运行需要下载并解压CS，时间取决于网速
     2. 开始运行时需要设置昵称
+
+> [!IMPORTANT]
+> CS1.6 压缩包的 7z 直链在 `lanchat.py` 顶部的 `CS_ARCHIVE_URL` 中配置（默认会有一个公共地址），也可以用环境变量 `LANCHAT_CS_URL` 覆盖。取消下载或出错时会自动删除下载残留。
 
 ### 自行编译
 
@@ -40,5 +43,3 @@ Codes by Deepseek
 ## 贡献者名单
 
 [![Contributors](https://contrib.rocks/image?repo=yjl214/lanchat)](https://github.com/yjl214/lanchat/graphs/contributors)
-
-
