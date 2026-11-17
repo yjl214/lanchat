@@ -1,7 +1,5 @@
 # lanchat
 
-by @github/yjl214, @github/Xuandows9
-
 Codes by Deepseek
 
 ## 主要功能
@@ -38,5 +36,13 @@ Codes by Deepseek
 
 1. 使用 ``git clone`` 克隆此仓库
 2. 在仓库目录下使用 ``pyinstaller lanchat.spec`` 可自动编译，成果在 ``.\dist``目录下
+
+## 贡献者名单
+
+<a href="https://github.com/yjl214/lanchat/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=yjl214/lanchat" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 [^1]:可以将自己的CS放至软件同目录下，将使用此版本CS
